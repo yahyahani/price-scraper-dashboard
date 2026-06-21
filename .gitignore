@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+env/
+*.egg-info/
+
+# Data: lokaal gegenereerde database niet meecommitten.
+# Let op: de GitHub Actions workflow (.github/workflows/scrape.yml) commit
+# data/scraper.db bewust automatisch zodat de repo altijd verse demo-data heeft.
+# Verwijder die stap uit de workflow als je dat niet wilt.
+data/*.db
+data/*.sqlite3
+!data/.gitkeep
+
+# Streamlit
+.streamlit/secrets.toml
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
