@@ -35,10 +35,8 @@ price-scraper-dashboard/
 │   ├── scraper.py          # Scraping logica (books.toscrape.com)
 │   └── database.py         # SQLite database laag
 ├── dashboard/
-│   ├── app.py                 # Streamlit shell (query-params, data laden, tabs)
-│   ├── custom_sidebar.py       # Custom HTML/CSS/JS: taal + live dark/light toggle
-│   ├── custom_ui.py            # Custom HTML/CSS/JS: cards, tabel, filters, chart
-│   ├── custom_history.py       # Custom HTML/CSS/JS: prijsgeschiedenis lijngrafiek
+│   ├── app.py                 # Streamlit shell (laadt data, leest taal uit URL)
+│   ├── dashboard_app.py        # Het volledige dashboard: 1 custom HTML/CSS/JS component
 │   └── i18n.py                 # Vertaal-helper
 ├── locales/
 │   ├── nl.json
@@ -50,11 +48,10 @@ price-scraper-dashboard/
 
 > **Waarom custom HTML/JS in plaats van pure Streamlit-widgets?**
 > Streamlit's eigen dataframe-tabel en inputs renderen via een vaste interne engine
-> die niet via CSS overschreven kan worden (vandaar een eerdere versie van dit project
-> waar de tabel altijd donker bleef, los van het gekozen thema). De hoofcontent
-> (cards/tabel/filters/grafieken) is daarom als losse HTML/CSS/JS-component gebouwd
-> en gerenderd via `st.components.v1.html`, wat volledige controle over het ontwerp geeft.
-> Streamlit zelf verzorgt alleen nog de sidebar en de algehele paginastructuur.
+> die niet via CSS overschreven kan worden. Het volledige dashboard (sidebar, tabs,
+> cards, tabel, filters, grafieken) is daarom gebouwd als één HTML/CSS/JS-component,
+> gerenderd via `st.components.v1.html`. Dark/light wisselt puur client-side door een
+> CSS-class te togglen op `<body>` — geen page reload, geen server-rondtrip.
 
 ## 🚀 Installatie & gebruik (macOS)
 
@@ -107,9 +104,9 @@ docker compose down
 
 ## 🎨 Dark & light mode
 
-Het dashboard is volledig custom gebouwd (HTML/CSS/JS in plaats van Streamlit's eigen widgets),
-met een gouden "boekenleer"-esthetiek. Wissel live tussen dark en light via de schakelaar
-in de zijbalk — geen herstart nodig, het hele dashboard (cards, tabel, grafieken) kleurt direct mee.
+Strak, neutraal ontwerp (indigo accent) volledig custom gebouwd in HTML/CSS/JS in plaats
+van Streamlit's eigen widgets. Wissel direct tussen dark en light via de schakelaar in
+de zijbalk — instant, zonder herladen, want het gebeurt volledig client-side in de browser.
 
 ## 🧩 Een nieuwe scraper toevoegen
 
@@ -205,9 +202,9 @@ docker compose down
 
 ## 🎨 Dark & light mode
 
-The dashboard is fully custom-built (HTML/CSS/JS instead of Streamlit's own widgets),
-with a gold "book leather" aesthetic. Switch live between dark and light using the toggle
-in the sidebar — no restart needed, the whole dashboard (cards, table, charts) re-colors instantly.
+A clean, neutral design (indigo accent) fully custom-built in HTML/CSS/JS instead of
+Streamlit's own widgets. Switch instantly between dark and light using the toggle in
+the sidebar — no reload, it happens entirely client-side in the browser.
 
 ### Adding a new scraper
 
@@ -290,9 +287,9 @@ docker compose down
 
 ## 🎨 النمط الفاتح والداكن
 
-تم بناء اللوحة بالكامل بتقنية مخصصة (HTML/CSS/JS بدلاً من عناصر واجهة Streamlit الأصلية)،
-بطابع ذهبي مستوحى من جلد الكتب. يمكنك التبديل مباشرة بين النمط الداكن والفاتح من الشريط
-الجانبي دون الحاجة لإعادة التشغيل.
+تم بناء اللوحة بالكامل بتقنية مخصصة (HTML/CSS/JS بدلاً من عناصر واجهة Streamlit الأصلية)
+بتصميم أنيق ومحايد. يمكنك التبديل الفوري بين النمط الداكن والفاتح من الشريط الجانبي
+دون الحاجة لإعادة تحميل الصفحة.
 
 ### إضافة أداة سحب جديدة
 
