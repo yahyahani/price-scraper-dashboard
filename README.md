@@ -29,12 +29,16 @@ Het dashboard ondersteunt **Nederlands, Engels en Arabisch** (inclusief RTL-layo
 price-scraper-dashboard/
 ├── main.py                # Entry point: runt de scraper
 ├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
 ├── scraper/
 │   ├── scraper.py          # Scraping logica (books.toscrape.com)
 │   └── database.py         # SQLite database laag
 ├── dashboard/
-│   ├── app.py               # Streamlit dashboard
-│   └── i18n.py              # Vertaal-helper
+│   ├── app.py                 # Streamlit shell (sidebar, tabs, data laden)
+│   ├── custom_ui.py           # Custom HTML/CSS/JS: cards, tabel, filters, chart
+│   ├── custom_history.py      # Custom HTML/CSS/JS: prijsgeschiedenis lijngrafiek
+│   └── i18n.py                 # Vertaal-helper
 ├── locales/
 │   ├── nl.json
 │   ├── en.json
@@ -42,6 +46,14 @@ price-scraper-dashboard/
 └── data/
     └── scraper.db           # Wordt automatisch aangemaakt
 ```
+
+> **Waarom custom HTML/JS in plaats van pure Streamlit-widgets?**
+> Streamlit's eigen dataframe-tabel en inputs renderen via een vaste interne engine
+> die niet via CSS overschreven kan worden (vandaar een eerdere versie van dit project
+> waar de tabel altijd donker bleef, los van het gekozen thema). De hoofcontent
+> (cards/tabel/filters/grafieken) is daarom als losse HTML/CSS/JS-component gebouwd
+> en gerenderd via `st.components.v1.html`, wat volledige controle over het ontwerp geeft.
+> Streamlit zelf verzorgt alleen nog de sidebar en de algehele paginastructuur.
 
 ## 🚀 Installatie & gebruik (macOS)
 
