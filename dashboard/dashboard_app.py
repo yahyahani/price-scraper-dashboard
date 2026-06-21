@@ -66,6 +66,7 @@ def render_full_dashboard(
     --accent-hover: #A78BFA;
     --accent-soft: #8B5CF61F;
     --accent-on: #FFFFFF;
+    --accent2: #F97362;
 }}
 
 body.light {{
@@ -79,6 +80,7 @@ body.light {{
     --accent-hover: #6D28D9;
     --accent-soft: #7C3AED14;
     --accent-on: #FFFFFF;
+    --accent2: #EA580C;
 }}
 
 * {{ box-sizing: border-box; }}
@@ -139,6 +141,38 @@ body {{
 }}
 
 .sidebar select:focus {{ border-color: var(--accent); }}
+
+.lang-buttons {{
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}}
+
+.lang-btn {{
+    width: 100%;
+    text-align: {"right" if rtl else "left"};
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s ease;
+}}
+
+.lang-btn.active {{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-on);
+}}
+
+.lang-btn:not(.active):hover {{
+    border-color: var(--accent);
+    color: var(--text);
+}}
 
 .seg-control {{
     display: flex;
@@ -236,10 +270,23 @@ h1.title {{ font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin: 
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 16px 18px;
-    transition: border-color 0.15s ease;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.15s ease, transform 0.15s ease;
 }}
 
-.stat-card:hover {{ border-color: var(--accent); }}
+.stat-card::before {{
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}}
+
+.stat-card:hover {{ border-color: var(--accent); transform: translateY(-1px); }}
+.stat-card:hover::before {{ opacity: 1; }}
 
 .stat-label {{
     font-size: 11px;
@@ -386,13 +433,13 @@ tbody tr:last-child td {{ border-bottom: none; }}
 
 .bar {{
     width: 100%;
-    background: var(--accent);
+    background: linear-gradient(180deg, var(--accent-hover), var(--accent));
     border-radius: 3px 3px 0 0;
     min-height: 3px;
     position: relative;
 }}
 
-.bar:hover {{ background: var(--accent-hover); }}
+.bar:hover {{ background: linear-gradient(180deg, var(--accent2), var(--accent)); }}
 
 .bar:hover::after {{
     content: attr(data-tooltip);
@@ -444,7 +491,7 @@ tbody tr:last-child td {{ border-bottom: none; }}
     <div class="sidebar">
         <div class="sidebar-section">
             <label>Language</label>
-            <select id="langSelect"></select>
+            <div class="lang-buttons" id="langButtons"></div>
         </div>
         <div class="sidebar-section">
             <label>Theme</label>
@@ -522,14 +569,16 @@ function renderStaticLabels() {{
     document.getElementById("tabHistoryLabel").textContent = T.tab_history;
     document.getElementById("tabAboutLabel").textContent = T.tab_about;
 
-    const langSelect = document.getElementById("langSelect");
-    langSelect.innerHTML = Object.entries(LANGUAGES).map(([code, label]) =>
-        `<option value="${{code}}" ${{code === CURRENT_LANG ? "selected" : ""}}>${{label}}</option>`
+    const langButtons = document.getElementById("langButtons");
+    langButtons.innerHTML = Object.entries(LANGUAGES).map(([code, label]) =>
+        `<button class="lang-btn ${{code === CURRENT_LANG ? 'active' : ''}}" data-lang="${{code}}" type="button">${{label}}</button>`
     ).join("");
-    langSelect.addEventListener("change", e => {{
-        const url = new URL(window.location.href);
-        url.searchParams.set("lang", e.target.value);
-        window.location.href = url.toString();
+    langButtons.querySelectorAll(".lang-btn").forEach(btn => {{
+        btn.addEventListener("click", () => {{
+            const url = new URL(window.location.href);
+            url.searchParams.set("lang", btn.getAttribute("data-lang"));
+            window.location.href = url.toString();
+        }});
     }});
 }}
 
