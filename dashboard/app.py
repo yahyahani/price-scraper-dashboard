@@ -109,7 +109,7 @@ with tab_overview:
         mode=mode,
         rtl=rtl,
     )
-    components.html(html, height=900, scrolling=False)
+    components.html(html, height=1500, scrolling=True)
 
 # ============================================================
 # TAB 2: Prijsgeschiedenis

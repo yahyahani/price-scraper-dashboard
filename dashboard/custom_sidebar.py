@@ -102,6 +102,8 @@ select:focus {{
     transition: all 0.2s ease;
     color: {c['text_muted']};
     user-select: none;
+    text-decoration: none;
+    display: block;
 }}
 
 .theme-option.active {{
@@ -126,6 +128,10 @@ select:focus {{
     cursor: pointer;
     font-family: 'Inter', sans-serif;
     transition: all 0.2s ease;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+    box-sizing: border-box;
 }}
 
 .refresh-btn:hover {{
@@ -153,36 +159,43 @@ hr {{
 <div class="section">
     <div class="section-label">🎨 <span>Thema</span></div>
     <div class="theme-toggle">
-        <div class="theme-option {'active' if current_mode == 'dark' else ''}" id="darkOption">🌙 Dark</div>
-        <div class="theme-option {'active' if current_mode == 'light' else ''}" id="lightOption">☀️ Light</div>
+        <a class="theme-option {'active' if current_mode == 'dark' else ''}" id="darkOption" href="?theme=dark&lang={current_lang}" target="_parent">🌙 Dark</a>
+        <a class="theme-option {'active' if current_mode == 'light' else ''}" id="lightOption" href="?theme=light&lang={current_lang}" target="_parent">☀️ Light</a>
     </div>
 </div>
 
 <hr>
 
-<button class="refresh-btn" id="refreshBtn">🔄 Vernieuwen</button>
+<a class="refresh-btn" id="refreshBtn" href="?theme={current_mode}&lang={current_lang}" target="_parent">🔄 Vernieuwen</a>
 
 <script>
 function setQueryParam(key, value) {{
-    const url = new URL(window.parent.location.href);
-    url.searchParams.set(key, value);
-    window.parent.location.href = url.toString();
+    try {{
+        const url = new URL(window.parent.location.href);
+        url.searchParams.set(key, value);
+        window.parent.location.href = url.toString();
+    }} catch (e) {{
+        // Cross-origin iframe kan window.parent.location niet altijd lezen/schrijven;
+        // de <a target="_parent"> links hierboven zijn de betrouwbare fallback.
+    }}
 }}
 
 document.getElementById("langSelect").addEventListener("change", e => {{
-    setQueryParam("lang", e.target.value);
-}});
-
-document.getElementById("darkOption").addEventListener("click", () => {{
-    setQueryParam("theme", "dark");
-}});
-
-document.getElementById("lightOption").addEventListener("click", () => {{
-    setQueryParam("theme", "light");
-}});
-
-document.getElementById("refreshBtn").addEventListener("click", () => {{
-    window.parent.location.reload();
+    const newLang = e.target.value;
+    const newHref = "?theme={current_mode}&lang=" + newLang;
+    try {{
+        window.top.location.href = newHref;
+    }} catch (err) {{
+        try {{
+            window.parent.location.href = newHref;
+        }} catch (err2) {{
+            // Laatste redmiddel: open in dezelfde tab via een tijdelijke link
+            const a = document.createElement("a");
+            a.href = newHref;
+            a.target = "_parent";
+            a.click();
+        }}
+    }}
 }});
 
 function resizeFrame() {{
