@@ -2,13 +2,15 @@
 app.py
 ------
 Streamlit dashboard dat de gescrapede data toont met grafieken en filters.
-Ondersteunt Nederlands, Engels en Arabisch (incl. RTL layout).
+Ondersteunt Nederlands, Engels en Arabisch (incl. RTL layout) en een
+dark/light thema met een gouden "boekenleer" accent.
 
 Streamlit dashboard that displays scraped data with charts and filters.
-Supports Dutch, English, and Arabic (including RTL layout).
+Supports Dutch, English, and Arabic (including RTL layout), and a
+dark/light theme with a gold "book leather" accent.
 
 لوحة تحكم Streamlit تعرض البيانات المسحوبة مع رسوم بيانية وفلاتر.
-تدعم اللغات: الهولندية، الإنجليزية، والعربية (مع دعم الكتابة من اليمين لليسار).
+تدعم اللغات الثلاث ونمطًا فاتحًا وداكنًا بلمسة ذهبية.
 
 Starten / Run / تشغيل:
     streamlit run dashboard/app.py
@@ -18,7 +20,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 # Zorg dat we de scraper/ module kunnen importeren ongeacht vanwaar je runt
@@ -26,39 +28,62 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from scraper.database import fetch_all_items, fetch_price_history, init_db
 from dashboard.i18n import load_translations, is_rtl, SUPPORTED_LANGUAGES
+from dashboard.theme import inject_theme, inject_rtl_override, DARK, LIGHT
 
 st.set_page_config(page_title="Price Scraper Dashboard", page_icon="📊", layout="wide")
 
-# --- Taal selectie (opgeslagen in session_state zodat het blijft staan) ---
+# --- Taal & thema selectie (opgeslagen in session_state) ---
 if "lang" not in st.session_state:
     st.session_state.lang = "nl"
+if "theme_mode" not in st.session_state:
+    st.session_state.theme_mode = "dark"
 
 with st.sidebar:
+    st.markdown("##### 🌐")
     selected_label = st.selectbox(
-        "🌐",
+        "Taal / Language / اللغة",
         options=list(SUPPORTED_LANGUAGES.values()),
         index=list(SUPPORTED_LANGUAGES.keys()).index(st.session_state.lang),
+        label_visibility="collapsed",
     )
-    # Zoek de taalcode terug bij het gekozen label
     st.session_state.lang = next(
         code for code, label in SUPPORTED_LANGUAGES.items() if label == selected_label
     )
 
+    theme_label = st.radio(
+        "Thema",
+        options=["🌙 Dark", "☀️ Light"],
+        index=0 if st.session_state.theme_mode == "dark" else 1,
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+    st.session_state.theme_mode = "dark" if "Dark" in theme_label else "light"
+
 lang = st.session_state.lang
+mode = st.session_state.theme_mode
 t = load_translations(lang)
 rtl = is_rtl(lang)
+palette = DARK if mode == "dark" else LIGHT
 
-# --- RTL styling indien Arabisch ---
+# --- Thema injecteren (kleuren + typografie + signature hover-glow) ---
+inject_theme(mode)
 if rtl:
-    st.markdown(
-        """
-        <style>
-        .stApp { direction: rtl; text-align: right; }
-        [data-testid="stSidebar"] { direction: rtl; text-align: right; }
-        </style>
-        """,
-        unsafe_allow_html=True,
+    inject_rtl_override()
+
+
+def styled_fig(fig: go.Figure) -> go.Figure:
+    """Past het huidige kleurthema toe op een Plotly-figuur."""
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", color=palette["text"]),
+        margin=dict(l=10, r=10, t=30, b=10),
+        xaxis=dict(gridcolor=palette["border"], zerolinecolor=palette["border"]),
+        yaxis=dict(gridcolor=palette["border"], zerolinecolor=palette["border"]),
+        hoverlabel=dict(bgcolor=palette["surface"], font_color=palette["text"]),
     )
+    return fig
+
 
 st.title(f"📊 {t['app_title']}")
 
@@ -116,9 +141,21 @@ with tab_overview:
 
     st.subheader(t["price_distribution"])
     if filtered["price"].notna().any():
-        fig = px.histogram(filtered, x="price", nbins=20)
-        fig.update_layout(margin=dict(l=10, r=10, t=10, b=10))
-        st.plotly_chart(fig, use_container_width=True)
+        fig = go.Figure(
+            data=[
+                go.Histogram(
+                    x=filtered["price"],
+                    nbinsx=20,
+                    marker=dict(
+                        color=palette["accent"],
+                        line=dict(color=palette["bg"], width=1),
+                    ),
+                    opacity=0.9,
+                )
+            ]
+        )
+        fig.update_layout(bargap=0.05)
+        st.plotly_chart(styled_fig(fig), use_container_width=True)
 
 # ============================================================
 # TAB 2: Prijsgeschiedenis
@@ -134,8 +171,21 @@ with tab_history:
         st.info(t["no_history"])
     else:
         history_df["scraped_at"] = pd.to_datetime(history_df["scraped_at"])
-        fig = px.line(history_df, x="scraped_at", y="price", markers=True, title=t["history_chart_title"])
-        st.plotly_chart(fig, use_container_width=True)
+        fig = go.Figure(
+            data=[
+                go.Scatter(
+                    x=history_df["scraped_at"],
+                    y=history_df["price"],
+                    mode="lines+markers",
+                    line=dict(color=palette["accent"], width=3, shape="spline"),
+                    marker=dict(size=8, color=palette["accent"], line=dict(color=palette["bg"], width=2)),
+                    fill="tozeroy",
+                    fillcolor=palette["accent_soft"],
+                )
+            ]
+        )
+        fig.update_layout(title=t["history_chart_title"])
+        st.plotly_chart(styled_fig(fig), use_container_width=True)
 
 # ============================================================
 # TAB 3: Over dit project
@@ -143,7 +193,7 @@ with tab_history:
 with tab_about:
     st.write(t["about_text"])
     st.markdown(
-        "[GitHub](https://github.com) · Python · Streamlit · SQLite · BeautifulSoup"
+        "[GitHub](https://github.com) · Python · Streamlit · SQLite · BeautifulSoup · Docker"
     )
 
 if st.sidebar.button(t["refresh_button"]):

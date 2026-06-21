@@ -31,8 +31,17 @@ HEADERS = {
 
 
 def _parse_price(price_text: str) -> float | None:
-    """Zet een prijsstring zoals '£51.77' om naar een float (51.77)."""
-    cleaned = price_text.strip().lstrip("£$€").replace(",", "")
+    """
+    Zet een prijsstring om naar een float, bv. '£51.77' -> 51.77.
+    Strip alle niet-numerieke tekens (valutasymbool, spaties, onzichtbare
+    Unicode-tekens) in plaats van te vertrouwen op een vaste lijst symbolen,
+    omdat sommige sites het valutasymbool anders encoderen dan verwacht.
+    """
+    import re
+
+    # Houd alleen cijfers, punt en komma over
+    cleaned = re.sub(r"[^\d.,]", "", price_text.strip())
+    cleaned = cleaned.replace(",", "")
     try:
         return float(cleaned)
     except ValueError:

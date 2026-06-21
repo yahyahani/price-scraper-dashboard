@@ -1,0 +1,10 @@
+services:
+  dashboard:
+    build: .
+    container_name: price-scraper-dashboard
+    ports:
+      - "8501:8501"
+    volumes:
+      # Database blijft bewaard tussen restarts van de container
+      - ./data:/app/data
+    restart: unless-stopped

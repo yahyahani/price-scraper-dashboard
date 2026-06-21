@@ -72,6 +72,37 @@ Het dashboard opent automatisch in je browser op `http://localhost:8501`.
 python main.py --schedule --interval 6   # elke 6 uur
 ```
 
+## 🐳 Draaien met Docker (aanbevolen — één klik)
+
+De makkelijkste manier om het dashboard te starten, zonder Python of dependencies lokaal te installeren:
+
+```bash
+docker compose up --build
+```
+
+Wacht tot je in de terminal `Dashboard starten op http://localhost:8501` ziet, en klik dan op:
+
+👉 **[http://localhost:8501](http://localhost:8501)**
+
+De eerste keer scraapt de container automatisch wat boekendata voordat het dashboard opent.
+Je database (`data/scraper.db`) blijft bewaard tussen herstarts, omdat die buiten de container leeft.
+
+Stoppen:
+```bash
+docker compose down
+```
+
+Opnieuw scrapen binnen de draaiende container:
+```bash
+docker compose exec dashboard python main.py
+```
+
+## 🎨 Dark & light mode
+
+Het dashboard heeft een gouden "boekenleer"-thema met een schakelaar tussen dark en light mode,
+te vinden linksboven in de zijbalk. Beide modi gebruiken dezelfde warme amber-accentkleur,
+met een subtiele gloed op kaarten en knoppen bij hover.
+
 ## 🧩 Een nieuwe scraper toevoegen
 
 Dit project is gemaakt om uit te breiden naar andere databronnen (bv. vacatures of nieuws):
@@ -144,6 +175,31 @@ For automatic periodic scraping:
 python main.py --schedule --interval 6
 ```
 
+## 🐳 Running with Docker (recommended — one click)
+
+The easiest way to start the dashboard without installing Python or dependencies locally:
+
+```bash
+docker compose up --build
+```
+
+Wait until the terminal shows `Dashboard starten op http://localhost:8501`, then click:
+
+👉 **[http://localhost:8501](http://localhost:8501)**
+
+On first run, the container automatically scrapes some book data before opening the dashboard.
+Your database (`data/scraper.db`) persists across restarts since it lives outside the container.
+
+Stop it with:
+```bash
+docker compose down
+```
+
+## 🎨 Dark & light mode
+
+The dashboard has a gold "book leather" theme with a dark/light toggle in the sidebar.
+Both modes share the same warm amber accent color, with a subtle glow on cards and buttons on hover.
+
 ### Adding a new scraper
 
 1. Create a new file, e.g. `scraper/jobs_scraper.py`
@@ -202,6 +258,30 @@ streamlit run dashboard/app.py       # تشغيل لوحة التحكم
 ```bash
 python main.py --schedule --interval 6
 ```
+
+## 🐳 التشغيل باستخدام Docker (موصى به — بنقرة واحدة)
+
+أسهل طريقة لتشغيل اللوحة بدون تثبيت Python أو أي تبعيات محليًا:
+
+```bash
+docker compose up --build
+```
+
+انتظر حتى تظهر الرسالة `Dashboard starten op http://localhost:8501` في الطرفية، ثم اضغط على:
+
+👉 **[http://localhost:8501](http://localhost:8501)**
+
+في أول تشغيل، يقوم الحاوية تلقائيًا بسحب بيانات الكتب قبل فتح اللوحة.
+تبقى قاعدة البيانات (`data/scraper.db`) محفوظة بعد إعادة التشغيل لأنها مخزّنة خارج الحاوية.
+
+للتوقف:
+```bash
+docker compose down
+```
+
+## 🎨 النمط الفاتح والداكن
+
+تتميز اللوحة بنمط ذهبي مستوحى من جلد الكتب، مع مفتاح تبديل بين الوضع الداكن والفاتح في الشريط الجانبي.
 
 ### إضافة أداة سحب جديدة
 
