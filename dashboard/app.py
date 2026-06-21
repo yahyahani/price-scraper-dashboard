@@ -1,10 +1,10 @@
 """
 app.py
 ------
-Dunne Streamlit-shell: laadt data, leest de taalkeuze uit de URL
-(?lang=nl), en rendert het volledige dashboard als één custom
-HTML/CSS/JS component. Dark/light wisselt puur client-side binnen
-dat component, zonder page reload.
+Dunne Streamlit-shell: laadt data en alle vertalingen (NL/EN/AR), en
+rendert het volledige dashboard als één custom HTML/CSS/JS component.
+Taal en thema wisselen puur client-side binnen dat component, zonder
+page reload.
 
 Starten / Run:
     streamlit run dashboard/app.py
@@ -19,7 +19,7 @@ import streamlit.components.v1 as components
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from scraper.database import fetch_all_items, fetch_price_history, init_db
-from dashboard.i18n import load_translations, is_rtl, SUPPORTED_LANGUAGES
+from dashboard.i18n import load_translations, SUPPORTED_LANGUAGES, RTL_LANGUAGES
 from dashboard.dashboard_app import render_full_dashboard
 
 st.set_page_config(page_title="Price Scraper Dashboard", page_icon=None, layout="wide")
@@ -35,12 +35,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-lang = st.query_params.get("lang", "nl")
-if lang not in SUPPORTED_LANGUAGES:
-    lang = "nl"
-
-t = load_translations(lang)
-rtl = is_rtl(lang)
+# Alle vertalingen voor alle talen tegelijk laden, zodat de taalkeuze
+# (net als het thema) puur client-side kan wisselen zonder page reload.
+all_translations = {code: load_translations(code) for code in SUPPORTED_LANGUAGES}
 
 init_db()
 rows = fetch_all_items()
@@ -56,10 +53,10 @@ for title in sorted({i["title"] for i in items}):
 html = render_full_dashboard(
     items=items,
     history_by_title=history_by_title,
-    translations=t,
+    all_translations=all_translations,
     languages=SUPPORTED_LANGUAGES,
-    current_lang=lang,
-    rtl=rtl,
+    rtl_languages=list(RTL_LANGUAGES),
+    default_lang="nl",
 )
 
 components.html(html, height=1100, scrolling=True)

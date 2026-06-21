@@ -5,24 +5,23 @@ Eén volledig zelfstandig HTML/CSS/JS dashboard (sidebar + content samen),
 gerenderd als één component via st.components.v1.html.
 
 Dark/light wisselt puur client-side door een CSS-class te togglen op
-<body> en de state in het component zelf te onthouden (geen page reload,
-geen iframe-naar-parent navigatie, geen query params) - dit elimineert
-de cross-origin navigatie problemen van eerdere versies.
+<body> (geen page reload, geen iframe-naar-parent navigatie, geen query
+params voor het thema). Taal wisselt via een URL query-param omdat de
+content per taal echt anders moet renderen (RTL voor Arabisch, en de
+vertalingen zelf), wat een page-load vereist.
 
-Streamlit zelf doet alleen nog: data ophalen uit de database en deze
-ene component renderen. Niets anders.
+Alle drie talen (NL/EN/AR) staan tegelijk in de payload, zodat de
+taalkeuze ook zonder reload zou kunnen - voor nu kiezen we een simpele
+reload bij taalwissel omdat RTL een hele layout-richting omgooit.
 """
 
 import json
 
 
-ICONS = {
-    "moon": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
-    "sun": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>',
-    "refresh": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
-    "globe": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/></svg>',
-    "search": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>',
-}
+ICON_MOON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+ICON_SUN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>'
+ICON_REFRESH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>'
+ICON_SEARCH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>'
 
 
 def render_full_dashboard(
@@ -33,15 +32,23 @@ def render_full_dashboard(
     current_lang: str,
     rtl: bool,
 ) -> str:
+    """
+    items: lijst van dicts (title, price, category, availability, scraped_at)
+    history_by_title: dict van title -> lijst van {price, scraped_at}
+    translations: het vertaal-dict (t) voor de huidige taal
+    languages: dict van taalcode -> leesbare naam, bv. {'nl': 'Nederlands', ...}
+    current_lang: de actieve taalcode, bv. 'nl'
+    rtl: True als de huidige taal rechts-naar-links is
+    """
     t = translations
     data_json = json.dumps(items, ensure_ascii=False)
     history_json = json.dumps(history_by_title, ensure_ascii=False)
     t_json = json.dumps(t, ensure_ascii=False)
     languages_json = json.dumps(languages, ensure_ascii=False)
     direction = "rtl" if rtl else "ltr"
+    rtl_js = "true" if rtl else "false"
 
-    html = f"""
-<!DOCTYPE html>
+    return f"""<!DOCTYPE html>
 <html dir="{direction}">
 <head>
 <meta charset="utf-8">
@@ -49,29 +56,29 @@ def render_full_dashboard(
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {{
-    --bg: #0A0A0B;
-    --surface: #16161A;
-    --surface-2: #1C1C21;
-    --border: #26262B;
-    --text: #EDEDEF;
-    --text-muted: #8B8B92;
-    --accent: #6366F1;
-    --accent-hover: #818CF8;
-    --accent-soft: #6366F11A;
-    --shadow: rgba(0,0,0,0.5);
+    --bg: #0B0B0F;
+    --surface: #16161D;
+    --surface-2: #1E1E27;
+    --border: #2A2A35;
+    --text: #F0F0F3;
+    --text-muted: #8E8E9A;
+    --accent: #8B5CF6;
+    --accent-hover: #A78BFA;
+    --accent-soft: #8B5CF61F;
+    --accent-on: #FFFFFF;
 }}
 
 body.light {{
-    --bg: #FAFAFA;
+    --bg: #FAFAFC;
     --surface: #FFFFFF;
-    --surface-2: #F4F4F5;
-    --border: #E4E4E7;
-    --text: #18181B;
-    --text-muted: #71717A;
-    --accent: #4F46E5;
-    --accent-hover: #4338CA;
-    --accent-soft: #4F46E50F;
-    --shadow: rgba(0,0,0,0.08);
+    --surface-2: #F2F1F8;
+    --border: #E4E1F0;
+    --text: #18181F;
+    --text-muted: #6C6C7A;
+    --accent: #7C3AED;
+    --accent-hover: #6D28D9;
+    --accent-soft: #7C3AED14;
+    --accent-on: #FFFFFF;
 }}
 
 * {{ box-sizing: border-box; }}
@@ -96,14 +103,13 @@ body {{
     .sidebar {{ display: none; }}
 }}
 
-/* ===== Sidebar ===== */
 .sidebar {{
     background: var(--surface);
     border-{"left" if rtl else "right"}: 1px solid var(--border);
     padding: 24px 18px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 22px;
 }}
 
 .sidebar-section label {{
@@ -129,11 +135,10 @@ body {{
     font-family: 'Inter', sans-serif;
     outline: none;
     appearance: none;
+    cursor: pointer;
 }}
 
-.sidebar select:focus {{
-    border-color: var(--accent);
-}}
+.sidebar select:focus {{ border-color: var(--accent); }}
 
 .seg-control {{
     display: flex;
@@ -165,12 +170,10 @@ body {{
 
 .seg-option.active {{
     background: var(--accent);
-    color: #fff;
+    color: var(--accent-on);
 }}
 
-.seg-option:not(.active):hover {{
-    color: var(--text);
-}}
+.seg-option:not(.active):hover {{ color: var(--text); }}
 
 .icon-btn {{
     width: 100%;
@@ -190,36 +193,18 @@ body {{
     font-family: 'Inter', sans-serif;
 }}
 
-.icon-btn:hover {{
-    border-color: var(--accent);
-    color: var(--accent);
-}}
+.icon-btn:hover {{ border-color: var(--accent); color: var(--accent); }}
 
-/* ===== Main content ===== */
-.main {{
-    padding: 36px 40px;
-    max-width: 1180px;
-}}
+.main {{ padding: 36px 40px; max-width: 1180px; }}
 
-h1.title {{
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin: 0 0 4px 0;
-}}
+h1.title {{ font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px 0; }}
 
-.subtitle {{
-    color: var(--text-muted);
-    font-size: 13px;
-    margin-bottom: 24px;
-}}
-
-/* ===== Tabs ===== */
 .tabs {{
     display: flex;
     gap: 4px;
     border-bottom: 1px solid var(--border);
     margin-bottom: 24px;
+    margin-top: 20px;
 }}
 
 .tab {{
@@ -233,19 +218,12 @@ h1.title {{
     transition: all 0.15s ease;
 }}
 
-.tab.active {{
-    color: var(--text);
-    border-bottom-color: var(--accent);
-}}
-
-.tab:hover:not(.active) {{
-    color: var(--text);
-}}
+.tab.active {{ color: var(--text); border-bottom-color: var(--accent); }}
+.tab:hover:not(.active) {{ color: var(--text); }}
 
 .tab-panel {{ display: none; }}
 .tab-panel.active {{ display: block; }}
 
-/* ===== Stat cards ===== */
 .stats {{
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -256,14 +234,12 @@ h1.title {{
 .stat-card {{
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 16px 18px;
     transition: border-color 0.15s ease;
 }}
 
-.stat-card:hover {{
-    border-color: var(--accent);
-}}
+.stat-card:hover {{ border-color: var(--accent); }}
 
 .stat-label {{
     font-size: 11px;
@@ -274,15 +250,9 @@ h1.title {{
     margin-bottom: 6px;
 }}
 
-.stat-value {{
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-}}
-
+.stat-value {{ font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }}
 .stat-value.accent {{ color: var(--accent); }}
 
-/* ===== Controls ===== */
 .controls {{
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -290,9 +260,7 @@ h1.title {{
     margin-bottom: 16px;
 }}
 
-@media (max-width: 600px) {{
-    .controls {{ grid-template-columns: 1fr; }}
-}}
+@media (max-width: 600px) {{ .controls {{ grid-template-columns: 1fr; }} }}
 
 .control-group label {{
     display: block;
@@ -328,17 +296,13 @@ h1.title {{
 }}
 .search-wrap .control-input {{ padding-{"right" if rtl else "left"}: 34px; }}
 
-.control-input:focus, .control-select:focus {{
-    border-color: var(--accent);
-}}
-
+.control-input:focus, .control-select:focus {{ border-color: var(--accent); }}
 .control-input::placeholder {{ color: var(--text-muted); }}
 
-/* ===== Table ===== */
 .table-wrap {{
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
     margin-bottom: 24px;
 }}
@@ -368,7 +332,6 @@ tbody td {{
 }}
 
 tbody td.num {{ font-weight: 600; color: var(--accent); }}
-
 tbody tr:hover {{ background: var(--surface-2); }}
 tbody tr:last-child td {{ border-bottom: none; }}
 
@@ -377,7 +340,7 @@ tbody tr:last-child td {{ border-bottom: none; }}
     font-size: 11px;
     font-weight: 500;
     padding: 3px 9px;
-    border-radius: 5px;
+    border-radius: 6px;
     background: var(--accent-soft);
     color: var(--accent);
 }}
@@ -404,9 +367,8 @@ tbody tr:last-child td {{ border-bottom: none; }}
 }}
 
 .page-btn:hover {{ border-color: var(--accent); color: var(--accent); }}
-.page-btn.active {{ background: var(--accent); border-color: var(--accent); color: #fff; }}
+.page-btn.active {{ background: var(--accent); border-color: var(--accent); color: var(--accent-on); }}
 
-/* ===== Chart ===== */
 .chart-section h3 {{ font-size: 15px; font-weight: 600; margin-bottom: 14px; }}
 
 .bars {{
@@ -416,7 +378,7 @@ tbody tr:last-child td {{ border-bottom: none; }}
     height: 160px;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 16px;
 }}
 
@@ -455,13 +417,12 @@ tbody tr:last-child td {{ border-bottom: none; }}
     margin-top: 8px;
 }}
 
-/* ===== History line chart ===== */
 .history-select {{ max-width: 360px; margin-bottom: 20px; }}
 
 .chart-card {{
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 18px;
 }}
 
@@ -471,29 +432,28 @@ tbody tr:last-child td {{ border-bottom: none; }}
 
 .about-text {{ font-size: 14px; line-height: 1.6; color: var(--text); max-width: 600px; }}
 .about-links {{ margin-top: 12px; font-size: 13px; color: var(--text-muted); }}
-.about-links a {{ color: var(--accent); text-decoration: none; }}
 
 ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
 ::-webkit-scrollbar-track {{ background: transparent; }}
 ::-webkit-scrollbar-thumb {{ background: var(--border); border-radius: 8px; }}
 </style>
 </head>
-<body class="">
+<body>
 
 <div class="layout">
     <div class="sidebar">
         <div class="sidebar-section">
-            <label>{ICONS['globe']} <span id="langLabel"></span></label>
+            <label>Language</label>
             <select id="langSelect"></select>
         </div>
         <div class="sidebar-section">
-            <label><span id="themeLabel"></span></label>
+            <label>Theme</label>
             <div class="seg-control">
-                <button class="seg-option active" id="darkBtn" type="button">{ICONS['moon']} Dark</button>
-                <button class="seg-option" id="lightBtn" type="button">{ICONS['sun']} Light</button>
+                <button class="seg-option active" id="darkBtn" type="button">{ICON_MOON} Dark</button>
+                <button class="seg-option" id="lightBtn" type="button">{ICON_SUN} Light</button>
             </div>
         </div>
-        <button class="icon-btn" id="refreshBtn" type="button">{ICONS['refresh']} <span id="refreshLabel"></span></button>
+        <button class="icon-btn" id="refreshBtn" type="button">{ICON_REFRESH} <span id="refreshLabel"></span></button>
     </div>
 
     <div class="main">
@@ -516,7 +476,8 @@ const HISTORY = {history_json};
 const T = {t_json};
 const LANGUAGES = {languages_json};
 const CURRENT_LANG = "{current_lang}";
-const RTL = {str(rtl).lower()};
+const RTL = {rtl_js};
+const ICON_SEARCH_SVG = `{ICON_SEARCH}`;
 
 let state = {{
     theme: "dark",
@@ -531,10 +492,9 @@ let state = {{
 }};
 
 function fmtPrice(p) {{
-    return (p === null || p === undefined) ? "-" : "£" + Number(p).toFixed(2);
+    return (p === null || p === undefined) ? "-" : "\u00a3" + Number(p).toFixed(2);
 }}
 
-/* ===== Theme toggle (pure client-side, no reload) ===== */
 function applyTheme() {{
     document.body.className = state.theme === "light" ? "light" : "";
     document.getElementById("darkBtn").classList.toggle("active", state.theme === "dark");
@@ -555,10 +515,7 @@ document.getElementById("refreshBtn").addEventListener("click", () => {{
     window.location.reload();
 }});
 
-/* ===== Static labels ===== */
 function renderStaticLabels() {{
-    document.getElementById("langLabel").textContent = "Language";
-    document.getElementById("themeLabel").textContent = "Theme";
     document.getElementById("refreshLabel").textContent = T.refresh_button || "Refresh";
     document.getElementById("appTitle").textContent = T.app_title;
     document.getElementById("tabOverviewLabel").textContent = T.tab_overview;
@@ -576,7 +533,6 @@ function renderStaticLabels() {{
     }});
 }}
 
-/* ===== Tabs ===== */
 document.querySelectorAll(".tab").forEach(tabEl => {{
     tabEl.addEventListener("click", () => {{
         state.activeTab = tabEl.getAttribute("data-tab");
@@ -588,7 +544,6 @@ document.querySelectorAll(".tab").forEach(tabEl => {{
     }});
 }});
 
-/* ===== Overview tab ===== */
 function getCategories() {{
     return Array.from(new Set(ITEMS.map(i => i.category).filter(Boolean))).sort();
 }}
@@ -665,13 +620,13 @@ function renderOverview() {{
         const bars = bins.map((count, idx) => {{
             const h = maxCount ? Math.max((count / maxCount) * 100, count > 0 ? 4 : 0) : 0;
             const rangeStart = (min + idx * binSize).toFixed(0);
-            return `<div class="bar-col"><div class="bar" style="height:${{h}}%" data-tooltip="£${{rangeStart}} (${{count}})"></div></div>`;
+            return `<div class="bar-col"><div class="bar" style="height:${{h}}%" data-tooltip="\u00a3${{rangeStart}} (${{count}})"></div></div>`;
         }}).join("");
         chartHtml = `
         <div class="chart-section">
             <h3>${{T.price_distribution}}</h3>
             <div class="bars">${{bars}}</div>
-            <div class="bar-axis"><span>£${{min.toFixed(0)}}</span><span>£${{max.toFixed(0)}}</span></div>
+            <div class="bar-axis"><span>\u00a3${{min.toFixed(0)}}</span><span>\u00a3${{max.toFixed(0)}}</span></div>
         </div>`;
     }}
 
@@ -698,7 +653,7 @@ function renderOverview() {{
             <div class="control-group">
                 <label>${{T.search_placeholder}}</label>
                 <div class="search-wrap">
-                    ${{ICONS_SEARCH}}
+                    ${{ICON_SEARCH_SVG}}
                     <input class="control-input" id="searchInput" type="text" placeholder="${{T.search_placeholder}}" value="${{state.search}}">
                 </div>
             </div>
@@ -744,9 +699,6 @@ function renderOverview() {{
     resizeFrame();
 }}
 
-const ICONS_SEARCH = `{ICONS['search']}`;
-
-/* ===== History tab ===== */
 function buildLineChart(points) {{
     const width = 760, height = 240, padding = 36;
     const prices = points.map(p => p.price);
@@ -762,7 +714,7 @@ function buildLineChart(points) {{
     const areaD = pathD + ` L${{coords[coords.length-1].x.toFixed(1)}},${{height-padding}} L${{coords[0].x.toFixed(1)}},${{height-padding}} Z`;
     const dots = coords.map(pt => `
         <circle cx="${{pt.x.toFixed(1)}}" cy="${{pt.y.toFixed(1)}}" r="4" fill="var(--accent)" style="cursor:pointer;">
-            <title>${{fmtPrice(pt.price)}} — ${{pt.date.replace('T',' ').slice(0,16)}}</title>
+            <title>${{fmtPrice(pt.price)}} \u2014 ${{pt.date.replace('T',' ').slice(0,16)}}</title>
         </circle>
     `).join("");
     return `
@@ -815,11 +767,10 @@ function renderHistory() {{
     resizeFrame();
 }}
 
-/* ===== About tab ===== */
 function renderAbout() {{
     document.getElementById("panel-about").innerHTML = `
         <div class="about-text">${{T.about_text}}</div>
-        <div class="about-links">Python · Streamlit · SQLite · BeautifulSoup · Docker</div>
+        <div class="about-links">Python &middot; Streamlit &middot; SQLite &middot; BeautifulSoup &middot; Docker</div>
     `;
 }}
 
@@ -840,4 +791,3 @@ window.addEventListener("resize", resizeFrame);
 </body>
 </html>
 """
-    return html
