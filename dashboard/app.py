@@ -2,17 +2,15 @@
 app.py
 ------
 Streamlit dashboard dat de gescrapede data toont met grafieken en filters.
-Ondersteunt Nederlands, Engels en Arabisch (incl. RTL layout) en een
-dark/light thema met een gouden "boekenleer" accent.
+Ondersteunt Nederlands, Engels en Arabisch (incl. RTL layout).
 
-Streamlit dashboard that displays scraped data with charts and filters.
-Supports Dutch, English, and Arabic (including RTL layout), and a
-dark/light theme with a gold "book leather" accent.
+Het kleurthema (dark/light) wordt geregeld door Streamlit's eigen
+ingebouwde theme-systeem (zie .streamlit/config.toml), aangevuld met
+een gouden accent-laag (dashboard/theme.py). Dit garandeert dat ALLE
+componenten consistent gekleurd zijn, inclusief de dataframe-tabel,
+die los van CSS-injectie haar kleuren leest uit de server-config.
 
-لوحة تحكم Streamlit تعرض البيانات المسحوبة مع رسوم بيانية وفلاتر.
-تدعم اللغات الثلاث ونمطًا فاتحًا وداكنًا بلمسة ذهبية.
-
-Starten / Run / تشغيل:
+Starten / Run:
     streamlit run dashboard/app.py
 """
 
@@ -23,25 +21,23 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-# Zorg dat we de scraper/ module kunnen importeren ongeacht vanwaar je runt
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from scraper.database import fetch_all_items, fetch_price_history, init_db
 from dashboard.i18n import load_translations, is_rtl, SUPPORTED_LANGUAGES
-from dashboard.theme import inject_theme, inject_rtl_override, DARK, LIGHT
+from dashboard.theme import inject_theme, inject_rtl_override, ACCENT
 
 st.set_page_config(page_title="Price Scraper Dashboard", page_icon="📊", layout="wide")
+inject_theme()
 
-# --- Taal & thema selectie (opgeslagen in session_state) ---
+# --- Taal selectie ---
 if "lang" not in st.session_state:
     st.session_state.lang = "nl"
-if "theme_mode" not in st.session_state:
-    st.session_state.theme_mode = "dark"
 
 with st.sidebar:
-    st.markdown("##### 🌐")
+    st.caption("🌐 Taal / Language / اللغة")
     selected_label = st.selectbox(
-        "Taal / Language / اللغة",
+        "Taal",
         options=list(SUPPORTED_LANGUAGES.values()),
         index=list(SUPPORTED_LANGUAGES.keys()).index(st.session_state.lang),
         label_visibility="collapsed",
@@ -50,42 +46,37 @@ with st.sidebar:
         code for code, label in SUPPORTED_LANGUAGES.items() if label == selected_label
     )
 
-    theme_label = st.radio(
-        "Thema",
-        options=["🌙 Dark", "☀️ Light"],
-        index=0 if st.session_state.theme_mode == "dark" else 1,
-        horizontal=True,
-        label_visibility="collapsed",
-    )
-    st.session_state.theme_mode = "dark" if "Dark" in theme_label else "light"
+    st.divider()
+    st.caption("🎨 Thema")
+    current_base = st.get_option("theme.base")
+    st.write(f"Huidig: **{'🌙 Dark' if current_base == 'dark' else '☀️ Light'}**")
+    with st.expander("Wisselen naar het andere thema"):
+        if current_base == "dark":
+            st.code("docker compose --profile light up", language="bash")
+            st.caption("Lokaal zonder Docker: `streamlit run dashboard/app.py --theme.base light`")
+        else:
+            st.code("docker compose up", language="bash")
+            st.caption("Lokaal zonder Docker: `streamlit run dashboard/app.py --theme.base dark`")
 
 lang = st.session_state.lang
-mode = st.session_state.theme_mode
 t = load_translations(lang)
 rtl = is_rtl(lang)
-palette = DARK if mode == "dark" else LIGHT
 
-# --- Thema injecteren (kleuren + typografie + signature hover-glow) ---
-inject_theme(mode)
 if rtl:
     inject_rtl_override()
 
 
 def styled_fig(fig: go.Figure) -> go.Figure:
-    """Past het huidige kleurthema toe op een Plotly-figuur."""
+    """Past transparante achtergrond toe zodat de grafiek met het Streamlit-thema meekleurt."""
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Inter, sans-serif", color=palette["text"]),
         margin=dict(l=10, r=10, t=30, b=10),
-        xaxis=dict(gridcolor=palette["border"], zerolinecolor=palette["border"]),
-        yaxis=dict(gridcolor=palette["border"], zerolinecolor=palette["border"]),
-        hoverlabel=dict(bgcolor=palette["surface"], font_color=palette["text"]),
     )
     return fig
 
 
-st.title(f"📊 {t['app_title']}")
+st.title(t['app_title'])
 
 # --- Data laden ---
 init_db()
@@ -146,10 +137,7 @@ with tab_overview:
                 go.Histogram(
                     x=filtered["price"],
                     nbinsx=20,
-                    marker=dict(
-                        color=palette["accent"],
-                        line=dict(color=palette["bg"], width=1),
-                    ),
+                    marker=dict(color=ACCENT, line=dict(width=0)),
                     opacity=0.9,
                 )
             ]
@@ -177,10 +165,10 @@ with tab_history:
                     x=history_df["scraped_at"],
                     y=history_df["price"],
                     mode="lines+markers",
-                    line=dict(color=palette["accent"], width=3, shape="spline"),
-                    marker=dict(size=8, color=palette["accent"], line=dict(color=palette["bg"], width=2)),
+                    line=dict(color=ACCENT, width=3, shape="spline"),
+                    marker=dict(size=8, color=ACCENT),
                     fill="tozeroy",
-                    fillcolor=palette["accent_soft"],
+                    fillcolor="rgba(232, 176, 75, 0.15)",
                 )
             ]
         )

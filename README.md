@@ -87,21 +87,26 @@ Wacht tot je in de terminal `Dashboard starten op http://localhost:8501` ziet, e
 De eerste keer scraapt de container automatisch wat boekendata voordat het dashboard opent.
 Je database (`data/scraper.db`) blijft bewaard tussen herstarts, omdat die buiten de container leeft.
 
+**Light mode in plaats van dark mode:**
+```bash
+docker compose --profile light up --build
+```
+
 Stoppen:
 ```bash
 docker compose down
 ```
 
-Opnieuw scrapen binnen de draaiende container:
-```bash
-docker compose exec dashboard python main.py
-```
-
 ## 🎨 Dark & light mode
 
-Het dashboard heeft een gouden "boekenleer"-thema met een schakelaar tussen dark en light mode,
-te vinden linksboven in de zijbalk. Beide modi gebruiken dezelfde warme amber-accentkleur,
-met een subtiele gloed op kaarten en knoppen bij hover.
+Het dashboard gebruikt Streamlit's eigen thema-systeem (zodat ook tabellen en alle widgets
+correct gekleurd zijn) met een gouden "boekenleer"-accent erbovenop. Welk thema actief is,
+bepaal je bij het starten — zie hierboven voor Docker, of lokaal:
+
+```bash
+streamlit run dashboard/app.py --theme.base dark    # standaard
+streamlit run dashboard/app.py --theme.base light
+```
 
 ## 🧩 Een nieuwe scraper toevoegen
 
@@ -190,6 +195,11 @@ Wait until the terminal shows `Dashboard starten op http://localhost:8501`, then
 On first run, the container automatically scrapes some book data before opening the dashboard.
 Your database (`data/scraper.db`) persists across restarts since it lives outside the container.
 
+**Light mode instead of dark:**
+```bash
+docker compose --profile light up --build
+```
+
 Stop it with:
 ```bash
 docker compose down
@@ -197,8 +207,14 @@ docker compose down
 
 ## 🎨 Dark & light mode
 
-The dashboard has a gold "book leather" theme with a dark/light toggle in the sidebar.
-Both modes share the same warm amber accent color, with a subtle glow on cards and buttons on hover.
+The dashboard uses Streamlit's own theming system (so tables and all widgets are colored
+correctly), with a gold "book leather" accent layered on top. Pick the theme at startup —
+see Docker above, or locally:
+
+```bash
+streamlit run dashboard/app.py --theme.base dark    # default
+streamlit run dashboard/app.py --theme.base light
+```
 
 ### Adding a new scraper
 

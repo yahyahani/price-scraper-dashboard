@@ -2,9 +2,23 @@ services:
   dashboard:
     build: .
     container_name: price-scraper-dashboard
+    profiles: ["", "dark"]
+    environment:
+      - THEME_BASE=dark
     ports:
       - "8501:8501"
     volumes:
-      # Database blijft bewaard tussen restarts van de container
+      - ./data:/app/data
+    restart: unless-stopped
+
+  dashboard-light:
+    build: .
+    container_name: price-scraper-dashboard-light
+    profiles: ["light"]
+    environment:
+      - THEME_BASE=light
+    ports:
+      - "8501:8501"
+    volumes:
       - ./data:/app/data
     restart: unless-stopped
