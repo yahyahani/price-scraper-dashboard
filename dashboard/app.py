@@ -19,7 +19,7 @@ import streamlit.components.v1 as components
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from scraper.database import fetch_all_items, fetch_price_history, init_db
-from dashboard.i18n import load_translations, SUPPORTED_LANGUAGES, RTL_LANGUAGES
+from dashboard.i18n import load_translations, is_rtl, SUPPORTED_LANGUAGES
 from dashboard.dashboard_app import render_full_dashboard
 
 st.set_page_config(page_title="Price Scraper Dashboard", page_icon=None, layout="wide")
@@ -35,9 +35,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Alle vertalingen voor alle talen tegelijk laden, zodat de taalkeuze
-# (net als het thema) puur client-side kan wisselen zonder page reload.
-all_translations = {code: load_translations(code) for code in SUPPORTED_LANGUAGES}
+# Taal wisselt via een URL query-param (?lang=en) en een page reload,
+# omdat RTL (Arabisch) de hele layout-richting omgooit - dat vraagt om
+# een verse render in plaats van pure client-side DOM-manipulatie.
+lang = st.query_params.get("lang", "nl")
+if lang not in SUPPORTED_LANGUAGES:
+    lang = "nl"
+
+t = load_translations(lang)
+rtl = is_rtl(lang)
 
 init_db()
 rows = fetch_all_items()
@@ -53,10 +59,10 @@ for title in sorted({i["title"] for i in items}):
 html = render_full_dashboard(
     items=items,
     history_by_title=history_by_title,
-    all_translations=all_translations,
+    translations=t,
     languages=SUPPORTED_LANGUAGES,
-    rtl_languages=list(RTL_LANGUAGES),
-    default_lang="nl",
+    current_lang=lang,
+    rtl=rtl,
 )
 
 components.html(html, height=1100, scrolling=True)
