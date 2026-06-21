@@ -161,6 +161,9 @@ body {{
     cursor: pointer;
     font-family: 'Inter', sans-serif;
     transition: all 0.15s ease;
+    text-decoration: none;
+    display: block;
+    box-sizing: border-box;
 }}
 
 .lang-btn.active {{
@@ -569,17 +572,22 @@ function renderStaticLabels() {{
     document.getElementById("tabHistoryLabel").textContent = T.tab_history;
     document.getElementById("tabAboutLabel").textContent = T.tab_about;
 
+    // Huidige volledige URL van de buitenste pagina ophalen (niet die van
+    // het iframe zelf) zodat we daar de lang-param op kunnen aanpassen.
+    let outerHref;
+    try {{
+        outerHref = window.top.location.href;
+    }} catch (e) {{
+        outerHref = window.location.href;
+    }}
+
     const langButtons = document.getElementById("langButtons");
-    langButtons.innerHTML = Object.entries(LANGUAGES).map(([code, label]) =>
-        `<button class="lang-btn ${{code === CURRENT_LANG ? 'active' : ''}}" data-lang="${{code}}" type="button">${{label}}</button>`
-    ).join("");
-    langButtons.querySelectorAll(".lang-btn").forEach(btn => {{
-        btn.addEventListener("click", () => {{
-            const url = new URL(window.location.href);
-            url.searchParams.set("lang", btn.getAttribute("data-lang"));
-            window.location.href = url.toString();
-        }});
-    }});
+    langButtons.innerHTML = Object.entries(LANGUAGES).map(([code, label]) => {{
+        const url = new URL(outerHref);
+        url.searchParams.set("lang", code);
+        const isActive = code === CURRENT_LANG;
+        return `<a class="lang-btn ${{isActive ? 'active' : ''}}" href="${{url.toString()}}" target="_top">${{label}}</a>`;
+    }}).join("");
 }}
 
 document.querySelectorAll(".tab").forEach(tabEl => {{
