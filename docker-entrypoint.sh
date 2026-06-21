@@ -2,18 +2,12 @@
 # docker-entrypoint.sh
 # --------------------
 # Draait bij het opstarten van de container:
-# 1. Kiest het juiste kleurthema (dark/light) op basis van THEME_BASE
-# 2. Scrape data als de database nog leeg/niet aanwezig is
-# 3. Start het Streamlit dashboard
+# 1. Scrape data als de database nog leeg/niet aanwezig is
+# 2. Start het Streamlit dashboard
+# (Dark/light wisselen gebeurt nu live in de app via de sidebar-toggle,
+#  niet meer via een apart Docker-profiel.)
 
 set -e
-
-if [ "$THEME_BASE" = "light" ]; then
-    echo "Light thema actief"
-    cp .streamlit/config.light.toml .streamlit/config.toml
-else
-    echo "Dark thema actief (standaard)"
-fi
 
 if [ ! -f "data/scraper.db" ]; then
     echo "Geen database gevonden, eerste keer scrapen..."

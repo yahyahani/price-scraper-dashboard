@@ -35,9 +35,10 @@ price-scraper-dashboard/
 │   ├── scraper.py          # Scraping logica (books.toscrape.com)
 │   └── database.py         # SQLite database laag
 ├── dashboard/
-│   ├── app.py                 # Streamlit shell (sidebar, tabs, data laden)
-│   ├── custom_ui.py           # Custom HTML/CSS/JS: cards, tabel, filters, chart
-│   ├── custom_history.py      # Custom HTML/CSS/JS: prijsgeschiedenis lijngrafiek
+│   ├── app.py                 # Streamlit shell (query-params, data laden, tabs)
+│   ├── custom_sidebar.py       # Custom HTML/CSS/JS: taal + live dark/light toggle
+│   ├── custom_ui.py            # Custom HTML/CSS/JS: cards, tabel, filters, chart
+│   ├── custom_history.py       # Custom HTML/CSS/JS: prijsgeschiedenis lijngrafiek
 │   └── i18n.py                 # Vertaal-helper
 ├── locales/
 │   ├── nl.json
@@ -99,11 +100,6 @@ Wacht tot je in de terminal `Dashboard starten op http://localhost:8501` ziet, e
 De eerste keer scraapt de container automatisch wat boekendata voordat het dashboard opent.
 Je database (`data/scraper.db`) blijft bewaard tussen herstarts, omdat die buiten de container leeft.
 
-**Light mode in plaats van dark mode:**
-```bash
-docker compose --profile light up --build
-```
-
 Stoppen:
 ```bash
 docker compose down
@@ -111,14 +107,9 @@ docker compose down
 
 ## 🎨 Dark & light mode
 
-Het dashboard gebruikt Streamlit's eigen thema-systeem (zodat ook tabellen en alle widgets
-correct gekleurd zijn) met een gouden "boekenleer"-accent erbovenop. Welk thema actief is,
-bepaal je bij het starten — zie hierboven voor Docker, of lokaal:
-
-```bash
-streamlit run dashboard/app.py --theme.base dark    # standaard
-streamlit run dashboard/app.py --theme.base light
-```
+Het dashboard is volledig custom gebouwd (HTML/CSS/JS in plaats van Streamlit's eigen widgets),
+met een gouden "boekenleer"-esthetiek. Wissel live tussen dark en light via de schakelaar
+in de zijbalk — geen herstart nodig, het hele dashboard (cards, tabel, grafieken) kleurt direct mee.
 
 ## 🧩 Een nieuwe scraper toevoegen
 
@@ -207,11 +198,6 @@ Wait until the terminal shows `Dashboard starten op http://localhost:8501`, then
 On first run, the container automatically scrapes some book data before opening the dashboard.
 Your database (`data/scraper.db`) persists across restarts since it lives outside the container.
 
-**Light mode instead of dark:**
-```bash
-docker compose --profile light up --build
-```
-
 Stop it with:
 ```bash
 docker compose down
@@ -219,14 +205,9 @@ docker compose down
 
 ## 🎨 Dark & light mode
 
-The dashboard uses Streamlit's own theming system (so tables and all widgets are colored
-correctly), with a gold "book leather" accent layered on top. Pick the theme at startup —
-see Docker above, or locally:
-
-```bash
-streamlit run dashboard/app.py --theme.base dark    # default
-streamlit run dashboard/app.py --theme.base light
-```
+The dashboard is fully custom-built (HTML/CSS/JS instead of Streamlit's own widgets),
+with a gold "book leather" aesthetic. Switch live between dark and light using the toggle
+in the sidebar — no restart needed, the whole dashboard (cards, table, charts) re-colors instantly.
 
 ### Adding a new scraper
 
@@ -309,7 +290,9 @@ docker compose down
 
 ## 🎨 النمط الفاتح والداكن
 
-تتميز اللوحة بنمط ذهبي مستوحى من جلد الكتب، مع مفتاح تبديل بين الوضع الداكن والفاتح في الشريط الجانبي.
+تم بناء اللوحة بالكامل بتقنية مخصصة (HTML/CSS/JS بدلاً من عناصر واجهة Streamlit الأصلية)،
+بطابع ذهبي مستوحى من جلد الكتب. يمكنك التبديل مباشرة بين النمط الداكن والفاتح من الشريط
+الجانبي دون الحاجة لإعادة التشغيل.
 
 ### إضافة أداة سحب جديدة
 

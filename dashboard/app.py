@@ -1,16 +1,15 @@
 """
 app.py
 ------
-Streamlit dashboard met volledig custom HTML/CSS/JS UI voor de hoofdcontent
-(cards, filters, tabel, grafieken) - Streamlit's eigen widgets worden alleen
-nog gebruikt in de sidebar (taal- en thema-keuze), omdat Streamlit's
-ingebouwde dataframe/inputs niet voldoende te stylen zijn voor een
-modern, custom ontwerp.
+Streamlit shell die alles doorgeeft aan custom HTML/CSS/JS componenten.
+Taal en thema worden via URL query-params bijgehouden (?lang=nl&theme=dark),
+zodat de custom sidebar-toggle écht het hele dashboard live kan herthema'en
+zonder Streamlit's eigen (niet-stylebare) widgets te gebruiken.
 
-Streamlit dashboard with fully custom HTML/CSS/JS UI for the main content
-(cards, filters, table, charts) - Streamlit's own widgets are only used
-in the sidebar (language/theme choice), since Streamlit's built-in
-dataframe/inputs can't be styled enough for a modern, custom design.
+Streamlit shell that delegates everything to custom HTML/CSS/JS components.
+Language and theme are tracked via URL query params (?lang=nl&theme=dark),
+so the custom sidebar toggle can truly re-theme the whole dashboard live
+without relying on Streamlit's own (unstyleable) widgets.
 
 Starten / Run:
     streamlit run dashboard/app.py
@@ -28,66 +27,53 @@ from scraper.database import fetch_all_items, fetch_price_history, init_db
 from dashboard.i18n import load_translations, is_rtl, SUPPORTED_LANGUAGES
 from dashboard.custom_ui import render_dashboard_html
 from dashboard.custom_history import render_history_html
+from dashboard.custom_sidebar import render_sidebar_html
 
 st.set_page_config(page_title="Price Scraper Dashboard", page_icon="📊", layout="wide")
 
-# ---------------------------------------------------------------------------
-# Minimale CSS: alleen om Streamlit's eigen chrome (padding, sidebar-look)
-# rustig te houden zodat het niet botst met onze custom HTML hieronder.
-# ---------------------------------------------------------------------------
+# --- Taal & thema uit URL query-params lezen (met fallback naar dark/nl) ---
+lang = st.query_params.get("lang", "nl")
+if lang not in SUPPORTED_LANGUAGES:
+    lang = "nl"
+
+mode = st.query_params.get("theme", "dark")
+if mode not in ("dark", "light"):
+    mode = "dark"
+
+t = load_translations(lang)
+rtl = is_rtl(lang)
+
+# --- Streamlit's eigen chrome neutraal/donker houden zodat het niet botst
+#     met onze custom HTML-componenten die het echte thema tonen. ---
+page_bg = "#0F0E0C" if mode == "dark" else "#FAF6EE"
 st.markdown(
-    """
+    f"""
     <style>
-    .block-container { padding-top: 2rem; max-width: 1200px; }
-    [data-testid="stSidebar"] { min-width: 260px; }
-    iframe { border: none; }
+    .stApp {{ background: {page_bg}; }}
+    .block-container {{ padding-top: 2rem; max-width: 1200px; }}
+    [data-testid="stSidebar"] {{ background: {page_bg}; min-width: 280px; }}
+    iframe {{ border: none; }}
+    [data-testid="stSidebarHeader"] {{ display: none; }}
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# --- Taal & thema selectie ---
-if "lang" not in st.session_state:
-    st.session_state.lang = "nl"
-
-current_base = st.get_option("theme.base") or "dark"
-
+# --- Sidebar: volledig custom component ---
 with st.sidebar:
-    st.caption("🌐 Taal / Language / اللغة")
-    selected_label = st.selectbox(
-        "Taal",
-        options=list(SUPPORTED_LANGUAGES.values()),
-        index=list(SUPPORTED_LANGUAGES.keys()).index(st.session_state.lang),
-        label_visibility="collapsed",
+    sidebar_html = render_sidebar_html(
+        languages=SUPPORTED_LANGUAGES,
+        current_lang=lang,
+        current_mode=mode,
+        translations=t,
     )
-    st.session_state.lang = next(
-        code for code, label in SUPPORTED_LANGUAGES.items() if label == selected_label
-    )
-
-    st.divider()
-    st.caption("🎨 Thema")
-    st.write(f"Huidig: **{'🌙 Dark' if current_base == 'dark' else '☀️ Light'}**")
-    with st.expander("Wisselen naar het andere thema"):
-        if current_base == "dark":
-            st.code("docker compose --profile light up", language="bash")
-            st.caption("Lokaal: `streamlit run dashboard/app.py --theme.base light`")
-        else:
-            st.code("docker compose up", language="bash")
-            st.caption("Lokaal: `streamlit run dashboard/app.py --theme.base dark`")
-
-    st.divider()
-    if st.button("🔄 Vernieuwen", use_container_width=True):
-        st.rerun()
-
-lang = st.session_state.lang
-t = load_translations(lang)
-rtl = is_rtl(lang)
+    components.html(sidebar_html, height=420, scrolling=False)
 
 # --- Data laden ---
 init_db()
 rows = fetch_all_items()
 
-# Custom titel (los van Streamlit's h1, voor volledige typografische controle)
+# Custom titel
 st.markdown(
     f"""
     <div style="
@@ -95,6 +81,7 @@ st.markdown(
         font-size: 2.6rem;
         font-weight: 600;
         margin-bottom: 0.3rem;
+        color: {'#F5F0E8' if mode == 'dark' else '#2A2520'};
         direction: {'rtl' if rtl else 'ltr'};
     ">{t['app_title']}</div>
     """,
@@ -112,20 +99,20 @@ tab_overview, tab_history, tab_about = st.tabs(
 )
 
 # ============================================================
-# TAB 1: Overzicht (volledig custom HTML component)
+# TAB 1: Overzicht
 # ============================================================
 with tab_overview:
     html = render_dashboard_html(
         items=items,
-        history_by_title={},  # niet nodig in deze tab
+        history_by_title={},
         translations=t,
-        mode=current_base,
+        mode=mode,
         rtl=rtl,
     )
     components.html(html, height=900, scrolling=False)
 
 # ============================================================
-# TAB 2: Prijsgeschiedenis (custom HTML component)
+# TAB 2: Prijsgeschiedenis
 # ============================================================
 with tab_history:
     titles = sorted({i["title"] for i in items})
@@ -140,7 +127,7 @@ with tab_history:
         titles=titles,
         history_by_title=history_by_title,
         translations=t,
-        mode=current_base,
+        mode=mode,
         rtl=rtl,
     )
     components.html(html_hist, height=480, scrolling=False)
@@ -149,7 +136,8 @@ with tab_history:
 # TAB 3: Over dit project
 # ============================================================
 with tab_about:
-    st.write(t["about_text"])
+    text_color = "#F5F0E8" if mode == "dark" else "#2A2520"
+    st.markdown(f"<div style='color:{text_color}'>{t['about_text']}</div>", unsafe_allow_html=True)
     st.markdown(
         "[GitHub](https://github.com) · Python · Streamlit · SQLite · BeautifulSoup · Docker"
     )

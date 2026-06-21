@@ -328,17 +328,25 @@ tbody tr:last-child td {{
     align-items: flex-end;
     gap: 3px;
     height: 180px;
+    box-sizing: border-box;
     background: {c['surface']};
     border: 1px solid {c['border']};
     border-radius: 16px;
-    padding: 20px 16px 8px;
+    padding: 16px;
+}}
+
+.bar-col {{
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
 }}
 
 .bar {{
-    flex: 1;
+    width: 100%;
     background: linear-gradient(180deg, {c['accent']} 0%, {c['accent2']} 100%);
     border-radius: 4px 4px 0 0;
-    min-height: 2px;
+    min-height: 3px;
     position: relative;
     transition: opacity 0.2s ease;
 }}
@@ -525,9 +533,9 @@ function renderChart(arr) {{
     const maxCount = Math.max(...bins);
 
     const bars = bins.map((count, idx) => {{
-        const heightPct = maxCount ? (count / maxCount) * 100 : 0;
+        const heightPct = maxCount ? Math.max((count / maxCount) * 100, count > 0 ? 4 : 0) : 0;
         const rangeStart = (min + idx * binSize).toFixed(0);
-        return `<div class="bar" style="height:${{heightPct}}%" data-tooltip="£${{rangeStart}} (${{count}})"></div>`;
+        return `<div class="bar-col"><div class="bar" style="height:${{heightPct}}%" data-tooltip="£${{rangeStart}} (${{count}})"></div></div>`;
     }}).join("");
 
     return `
